@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mentor Socrático · Investigación de Mercado y Producto · UPAV</title>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBjcblj8HNjK8aNZc5PGCTuUYYGopkAmHk",
+  authDomain: "upav-docente.firebaseapp.com",
+  projectId: "upav-docente",
+  storageBucket: "upav-docente.firebasestorage.app",
+  messagingSenderId: "975857831905",
+  appId: "1:975857831905:web:6507f87d1b38892b690ca0",
+  measurementId: "G-Y5LKY4V0H6"
+};
+
+const app  = initializeApp(firebaseConfig);
+const db   = getFirestore(app);
+
+// ── Exponemos al scope global para el código no-module ──
+window._db              = db;
+window._doc             = doc;
+window._setDoc          = setDoc;
+window._getDoc          = getDoc;
+window._onSnapshot      = onSnapshot;
+window._collection      = collection;
+window._serverTimestamp = serverTimestamp;
+window._fbReady         = true;
+window.dispatchEvent(new Event('fbReady'));
+</script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --white:     #ffffff;
+  --canvas:    #f7f8fa;
+  --border:    #e4e7ec;
+  --bmed:      #c9d0db;
+  --faint:     #f0f2f5;
+  --light:     #8a93a2;
+  --mid:       #4a5568;
+  --dark:      #1a202c;
+  --green:     #16a34a;
+  --green-lt:  #dcfce7;
+  --green-mid: #bbf7d0;
+  --green-dim: #166534;
+  --amber:     #d97706;
+  --amber-lt:  #fef3c7;
+  --red:       #dc2626;
+  --red-lt:    #fee2e2;
+  --blue:      #2563eb;
+  --blue-lt:   #dbeafe;
+  --sw:        268px;
+  --th:        56px;
+}
+
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{background:var(--canvas);color:var(--dark);font-family:'Inter',sans-serif;font-size:14px;line-height:1.6}
+
+/* ── TOPBAR ── */
+#topbar{
+  position:fixed;top:0;left:0;right:0;z-index:300;
+  height:var(--th);background:var(--white);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 20px 0 16px;gap:14px;
+}
+.logo{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.logo-mark{
+  width:34px;height:34px;background:var(--green);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:#fff;
+}
+.logo-title{font-size:13px;font-weight:700;color:var(--dark)}
+.logo-sub{font-size:11px;color:var(--light)}
+.tdiv{width:1px;height:28px;background:var(--border);flex-shrink:0}
+.tright{margin-left:auto;display:flex;align-items:center;gap:8px}
+.api-lbl{font-size:11px;color:var(--light);white-space:nowrap}
+.api-input{
+  background:var(--canvas);border:1px solid var(--border);border-radius:6px;
+  color:var(--dark);font-family:'JetBrains Mono',monospace;font-size:11px;
+  padding:6px 10px;width:205px;outline:none;transition:border-color .2s,box-shadow .2s;
+}
+.api-input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(22,163,74,.1)}
+.api-input::placeholder{color:var(--light)}
+
+/* user badge */
+#user-badge{
+  display:none;align-items:center;gap:8px;
+  background:var(--green-lt);border:1px solid var(--green-mid);
+  border-radius:20px;padding:4px 12px 4px 6px;
+}
+#user-badge.show{display:flex}
+.ub-dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
+#ub-name{font-size:12px;font-weight:600;color:var(--green-dim)}
+#btn-logout{background:none;border:none;color:var(--light);font-size:11px;cursor:pointer;padding:0 0 0 4px}
+#btn-logout:hover{color:var(--red)}
+
+#fb-status{
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  padding:3px 8px;border-radius:4px;white-space:nowrap;
+}
+#fb-status.ok{background:var(--green-lt);color:var(--green-dim);border:1px solid var(--green-mid)}
+#fb-status.err{background:var(--red-lt);color:var(--red);border:1px solid #fca5a5}
+#fb-status.wait{background:var(--amber-lt);color:#92400e;border:1px solid #fcd34d}
+
+.btn{
+  border:none;cursor:pointer;font-family:'Inter',sans-serif;
+  font-size:12px;font-weight:600;border-radius:6px;padding:7px 14px;
+  display:flex;align-items:center;gap:5px;transition:all .15s;white-space:nowrap;line-height:1;
+}
+.btn:active{transform:scale(.97)}
+.btn-green{background:var(--green);color:#fff}.btn-green:hover{background:#15803d}
+.btn-outline{background:var(--white);color:var(--mid);border:1px solid var(--border)}.btn-outline:hover{background:var(--canvas)}
+.btn-amber{background:var(--amber);color:#fff}.btn-amber:hover{background:#b45309}
+.btn-ghost{background:var(--faint);color:var(--mid);border:1px solid var(--border)}.btn-ghost:hover{background:var(--border)}
+.btn-red{background:var(--red);color:#fff}.btn-red:hover{background:#b91c1c}
+
+/* ── MODAL LOGIN ── */
+#modal-overlay{
+  position:fixed;inset:0;z-index:400;
+  background:rgba(0,0,0,.35);backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;
+}
+#modal-overlay.hidden{display:none}
+.modal{
+  background:var(--white);border-radius:12px;padding:36px 32px;
+  width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.2);
+}
+.modal-logo{display:flex;align-items:center;gap:10px;margin-bottom:24px}
+.modal h2{font-size:17px;font-weight:700;margin-bottom:6px}
+.modal p{font-size:12px;color:var(--light);margin-bottom:22px}
+.form-field{margin-bottom:14px}
+.form-field label{display:block;font-size:11px;font-weight:600;color:var(--mid);margin-bottom:5px}
+.form-field input{
+  width:100%;background:var(--canvas);border:1px solid var(--border);
+  border-radius:6px;color:var(--dark);font-family:'Inter',sans-serif;
+  font-size:13px;padding:9px 12px;outline:none;transition:border-color .2s,box-shadow .2s;
+}
+.form-field input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(22,163,74,.1)}
+.modal-actions{display:flex;flex-direction:column;gap:8px;margin-top:20px}
+.modal-note{font-size:10px;color:var(--light);text-align:center;margin-top:8px}
+
+/* ── LAYOUT ── */
+#layout{display:flex;padding-top:var(--th);height:100%}
+
+/* ── SIDEBAR ── */
+#sidebar{
+  width:var(--sw);background:var(--white);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0;
+  height:calc(100vh - var(--th));position:sticky;top:var(--th);
+}
+.sb-sec{padding:14px 12px 8px}
+.sb-sec+.sb-sec{border-top:1px solid var(--border)}
+.sb-lbl{
+  font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:600;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--light);
+  padding:0 6px;margin-bottom:6px;display:flex;align-items:center;gap:8px;
+}
+.sb-lbl::after{content:'';flex:1;height:1px;background:var(--border)}
+.nav-item{
+  display:flex;align-items:flex-start;gap:10px;padding:8px;
+  border-radius:6px;cursor:pointer;transition:background .12s;
+  margin-bottom:1px;border:1px solid transparent;
+}
+.nav-item:hover{background:var(--canvas)}
+.nav-item.active{background:var(--green-lt);border-color:var(--green-mid)}
+.nav-item.active .nav-title{color:var(--green-dim)}
+.nav-item.active .nav-paso{background:var(--green);color:#fff}
+.nav-paso{
+  background:var(--faint);color:var(--light);
+  font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;
+  border-radius:4px;padding:2px 6px;white-space:nowrap;flex-shrink:0;margin-top:1px;
+  transition:background .12s,color .12s;
+}
+.nav-title{font-size:12px;font-weight:600;color:var(--mid);line-height:1.3}
+.nav-sub{font-size:10px;color:var(--light);margin-top:1px;line-height:1.3}
+
+/* sync dot on nav items */
+.nav-item .sync-dot{
+  width:6px;height:6px;border-radius:50%;background:var(--border);
+  flex-shrink:0;margin-top:6px;margin-left:auto;
+}
+.nav-item.saved .sync-dot{background:var(--green)}
+
+.sb-footer{padding:14px 12px;border-top:1px solid var(--border);margin-top:auto}
+.prog-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.prog-lbl{font-size:10px;color:var(--light);font-weight:500}
+.prog-pct{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--green)}
+.prog-track{height:4px;background:var(--border);border-radius:4px;overflow:hidden;margin-bottom:12px}
+.prog-fill{height:100%;background:var(--green);border-radius:4px;transition:width .4s ease}
+
+/* ── MAIN ── */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;height:calc(100vh - var(--th))}
+
+/* ── VIEW TABS ── */
+#view-tabs{background:var(--white);border-bottom:1px solid var(--border);display:flex;padding:0 20px;flex-shrink:0}
+.vtab{
+  background:none;border:none;border-bottom:2px solid transparent;
+  color:var(--light);font-family:'Inter',sans-serif;font-size:12px;font-weight:600;
+  padding:12px 14px;cursor:pointer;transition:color .15s,border-color .15s;white-space:nowrap;
+}
+.vtab:hover{color:var(--dark)}
+.vtab.active{color:var(--green);border-bottom-color:var(--green)}
+
+/* ── PANELS ── */
+.view-panel{display:none;flex:1;overflow:hidden}
+.view-panel.active{display:flex;flex-direction:column}
+
+/* ── CHAT ── */
+#chat-ctx{
+  background:var(--faint);border-bottom:1px solid var(--border);
+  padding:7px 20px;font-size:11px;color:var(--light);
+  display:flex;align-items:center;gap:8px;flex-shrink:0;
+}
+.ctx-tag{
+  background:var(--green-lt);color:var(--green-dim);
+  border:1px solid var(--green-mid);border-radius:4px;
+  padding:1px 8px;font-weight:600;font-size:11px;
+  font-family:'JetBrains Mono',monospace;
+}
+#messages{
+  flex:1;overflow-y:auto;padding:24px 20px;
+  display:flex;flex-direction:column;gap:16px;background:var(--canvas);
+}
+.msg{display:flex;gap:10px;max-width:800px}
+.msg.user{align-self:flex-end;flex-direction:row-reverse}
+.msg-avatar{
+  width:32px;height:32px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;
+}
+.msg.mentor .msg-avatar{background:var(--green-lt);border:1px solid var(--green-mid)}
+.msg.user   .msg-avatar{background:var(--faint);border:1px solid var(--border)}
+.msg-bubble{
+  background:var(--white);border:1px solid var(--border);border-radius:10px;
+  padding:12px 15px;font-size:13px;line-height:1.65;color:var(--mid);
+  max-width:620px;box-shadow:0 1px 3px rgba(0,0,0,.05);
+}
+.msg.user .msg-bubble{background:var(--green);border-color:var(--green);color:#fff}
+.msg-meta{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--light);margin-bottom:5px;letter-spacing:.08em;text-transform:uppercase}
+.msg.user .msg-meta{color:rgba(255,255,255,.7)}
+.msg-bubble p{margin-bottom:7px}.msg-bubble p:last-child{margin-bottom:0}
+.typing-indicator{display:flex;gap:4px;align-items:center;padding:2px 0}
+.typing-dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:bounce 1.2s infinite}
+.typing-dot:nth-child(2){animation-delay:.2s}.typing-dot:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+#input-area{
+  border-top:1px solid var(--border);padding:12px 20px;
+  display:flex;gap:8px;align-items:flex-end;background:var(--white);flex-shrink:0;
+}
+#user-input{
+  flex:1;background:var(--canvas);border:1px solid var(--border);border-radius:8px;
+  color:var(--dark);font-family:'Inter',sans-serif;font-size:13px;
+  line-height:1.5;padding:9px 13px;resize:none;min-height:42px;max-height:120px;
+  outline:none;transition:border-color .2s,box-shadow .2s;
+}
+#user-input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(22,163,74,.1)}
+#user-input::placeholder{color:var(--light)}
+
+/* ── REF & AVANCE ── */
+#ref-panel,#avance-panel{overflow-y:auto;background:var(--canvas)}
+#ref-content,#avance-content{max-width:900px;margin:0 auto;padding:32px 26px}
+
+/* ── CONTENT STYLES ── */
+.eyebrow{font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--green);margin-bottom:5px}
+h2.ch2{font-size:20px;font-weight:700;letter-spacing:-.02em;color:var(--dark);margin-bottom:10px}
+h3.ch3{font-size:11px;font-weight:700;color:var(--dark);margin-bottom:8px;margin-top:22px;text-transform:uppercase;letter-spacing:.05em}
+.cp{font-size:13px;color:var(--mid);margin-bottom:12px;line-height:1.7}
+hr.div{border:none;border-top:1px solid var(--border);margin:26px 0}
+.bp{display:inline-flex;align-items:center;gap:8px;background:var(--canvas);border:1px solid var(--border);border-radius:20px;padding:4px 14px 4px 5px;margin-bottom:18px}
+.bp-num{background:var(--dark);color:#fff;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;border-radius:20px;padding:2px 8px}
+.bp span{font-size:11px;color:var(--light)}
+.cg{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:16px 0}
+.card{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card .ci{font-size:18px;margin-bottom:7px}.card h4{font-size:12px;font-weight:700;color:var(--dark);margin-bottom:4px}
+.card p{font-size:11px;color:var(--light);margin:0;line-height:1.5}
+.card.g{border-top:3px solid var(--green)}.card.a{border-top:3px solid var(--amber)}
+.card.b{border-top:3px solid var(--blue)}.card.r{border-top:3px solid var(--red)}
+.tw{overflow-x:auto;margin:16px 0}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead tr{background:var(--faint)}
+th{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--light);padding:9px 12px;text-align:left;border-bottom:1px solid var(--border)}
+td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--mid);vertical-align:top}
+tr:hover td{background:var(--canvas)}
+.badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 6px;border-radius:4px;font-weight:600}
+.bg{background:var(--green-lt);color:var(--green-dim);border:1px solid var(--green-mid)}
+.ba{background:var(--amber-lt);color:#92400e;border:1px solid #fcd34d}
+.br{background:var(--red-lt);color:#991b1b;border:1px solid #fca5a5}
+.bb{background:var(--blue-lt);color:#1e40af;border:1px solid #93c5fd}
+.kr{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:16px 0}
+.kb{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.kv{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--green);display:block}
+.kl{font-size:10px;color:var(--light);margin-top:2px;line-height:1.3}
+.hl{background:var(--green-lt);border:1px solid var(--green-mid);border-left:4px solid var(--green);border-radius:0 6px 6px 0;padding:11px 15px;margin:13px 0;font-size:12px;color:var(--mid);line-height:1.6}
+.hl strong{color:var(--green-dim)}
+.hl-amber{background:var(--amber-lt);border:1px solid #fcd34d;border-left:4px solid var(--amber);border-radius:0 6px 6px 0;padding:11px 15px;margin:13px 0;font-size:12px;color:var(--mid);line-height:1.6}
+.hl-amber strong{color:#92400e}
+.audit{border:1px solid var(--border);border-radius:8px;overflow:hidden;margin:16px 0;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.audit-h{background:var(--faint);padding:9px 14px;font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.1em;color:var(--mid);text-transform:uppercase}
+.audit-i{display:flex;gap:10px;align-items:flex-start;padding:8px 14px;border-bottom:1px solid var(--border);font-size:12px;color:var(--mid)}
+.audit-i:last-child{border-bottom:none}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:14px 0}
+.fn{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:7px 11px;font-size:11px;font-weight:600;color:var(--dark);text-align:center;min-width:88px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.fn small{display:block;font-weight:400;color:var(--light);font-size:9px;margin-top:1px}
+.fa{color:var(--green);font-size:15px;font-weight:300}
+.map-wrap{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:16px;margin:16px 0;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.map-wrap svg{width:100%;height:auto}
+
+/* ── AVANCE ── */
+.av-block{background:var(--white);border:1px solid var(--border);border-radius:8px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.04);overflow:hidden}
+.av-header{background:var(--faint);padding:10px 15px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.av-title{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:var(--dark);letter-spacing:.08em;text-transform:uppercase}
+.av-status-row{display:flex;align-items:center;gap:8px}
+.av-st{font-size:10px;color:var(--light)}
+.av-sync{width:7px;height:7px;border-radius:50%;background:var(--border)}
+.av-sync.synced{background:var(--green)}
+.av-sync.syncing{background:var(--amber);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.av-body{padding:15px}
+.av-field{margin-bottom:12px}
+.av-field label{display:block;font-size:11px;font-weight:600;color:var(--mid);margin-bottom:4px}
+.av-field textarea{
+  width:100%;background:var(--canvas);border:1px solid var(--border);
+  border-radius:6px;color:var(--dark);font-family:'Inter',sans-serif;
+  font-size:12px;line-height:1.6;padding:8px 11px;outline:none;resize:vertical;
+  min-height:66px;transition:border-color .2s,box-shadow .2s;
+}
+.av-field textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(22,163,74,.1)}
+.av-field textarea.obs-ta{border-left:3px solid var(--green)}
+.av-actions{display:flex;gap:8px;align-items:center;padding:10px 15px;border-top:1px solid var(--border);background:var(--faint);flex-wrap:wrap}
+.save-ok{font-size:11px;color:var(--green);opacity:0;transition:opacity .3s;font-weight:500}
+.save-ok.show{opacity:1}
+
+.dl-box{border:1px solid var(--green-mid);border-radius:8px;padding:20px;background:var(--green-lt);margin-top:6px}
+
+/* ── TOAST ── */
+#toast{
+  position:fixed;bottom:22px;right:22px;z-index:999;
+  background:var(--dark);color:#fff;border-radius:8px;padding:10px 16px;
+  font-size:12px;font-weight:500;display:flex;align-items:center;gap:8px;
+  box-shadow:0 4px 16px rgba(0,0,0,.2);opacity:0;pointer-events:none;transition:opacity .25s;
+}
+#toast.show{opacity:1}
+
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--canvas)}
+::-webkit-scrollbar-thumb{background:var(--bmed);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--light)}
+
+@media(max-width:700px){
+  #sidebar{display:none}
+  .api-input{width:140px}
+  #ref-content,#avance-content{padding:18px 14px}
+  #messages{padding:16px 14px}
+  #input-area{padding:10px 14px}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ MODAL LOGIN ══ -->
+<div id="modal-overlay">
+  <div class="modal">
+    <div class="modal-logo">
+      <div class="logo-mark">KC</div>
+      <div>
+        <div class="logo-title">Mentor Socrático · Kafé-Click</div>
+        <div class="logo-sub">UPAV Orizaba · Investigación de Mercado y Producto</div>
+      </div>
+    </div>
+    <h2>Identificación del alumno</h2>
+    <p>Tus respuestas se guardarán en la nube. Usa siempre el mismo nombre para recuperar tu avance.</p>
+    <div class="form-field">
+      <label>Nombre completo</label>
+      <input type="text" id="inp-name" placeholder="Ej. María González López" autocomplete="name">
+    </div>
+    <div class="form-field">
+      <label>Matrícula</label>
+      <input type="text" id="inp-mat" placeholder="Ej. ING-2024-001" autocomplete="off">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-green" style="justify-content:center" onclick="loginUser()">Entrar al mentor →</button>
+    </div>
+    <p class="modal-note">Tu avance se sincroniza automáticamente. Si ya usaste el sistema antes, ingresa el mismo nombre y matrícula para recuperarlo.</p>
+  </div>
+</div>
+
+<!-- ══ TOPBAR ══ -->
+<div id="topbar">
+  <div class="logo">
+    <div class="logo-mark">KC</div>
+    <div>
+      <div class="logo-title">Mentor Socrático · Kafé-Click</div>
+      <div class="logo-sub">Investigación de Mercado y Producto · UPAV Orizaba</div>
+    </div>
+  </div>
+  <div class="tdiv"></div>
+  <div class="tright">
+    <div id="user-badge">
+      <div class="ub-dot"></div>
+      <span id="ub-name"></span>
+      <button id="btn-logout" onclick="logoutUser()">✕ Salir</button>
+    </div>
+    <div id="fb-status" class="wait">⏳ Conectando…</div>
+  </div>
+</div>
+
+<!-- ══ LAYOUT ══ -->
+<div id="layout">
+
+<!-- SIDEBAR -->
+<div id="sidebar">
+  <div class="sb-sec">
+    <div class="sb-lbl">Bloque 1 · Investigación</div>
+    <div class="nav-item active" id="nav-b1p1" onclick="setCtx(this,'b1p1','P1','Descripción técnica del producto')">
+      <span class="nav-paso">P1</span>
+      <div><div class="nav-title">Descripción del producto</div><div class="nav-sub">Ficha técnica, propuesta de valor</div></div>
+      <div class="sync-dot"></div>
+    </div>
+    <div class="nav-item" id="nav-b1p2" onclick="setCtx(this,'b1p2','P2','Segmentación de mercado y buyer persona')">
+      <span class="nav-paso">P2</span>
+      <div><div class="nav-title">Segmentación y buyer persona</div><div class="nav-sub">Matriz NSE, perfil de usuario</div></div>
+      <div class="sync-dot"></div>
+    </div>
+    <div class="nav-item" id="nav-b1p3" onclick="setCtx(this,'b1p3','P3','Investigación de mercado y triangulación')">
+      <span class="nav-paso">P3</span>
+      <div><div class="nav-title">Investigación y triangulación</div><div class="nav-sub">INEGI, PROFECO, campo</div></div>
+      <div class="sync-dot"></div>
+    </div>
+  </div>
+  <div class="sb-sec">
+    <div class="sb-lbl">Bloque 2 · Marca y Precio</div>
+    <div class="nav-item" id="nav-b2p4" onclick="setCtx(this,'b2p4','P4','Identidad de marca y arquitectura de empaque')">
+      <span class="nav-paso">P4</span>
+      <div><div class="nav-title">Identidad de marca</div><div class="nav-sub">Branding, empaque, tagline</div></div>
+      <div class="sync-dot"></div>
+    </div>
+    <div class="nav-item" id="nav-b2p5" onclick="setCtx(this,'b2p5','P5','Análisis competitivo y benchmarking')">
+      <span class="nav-paso">P5</span>
+      <div><div class="nav-title">Análisis competitivo</div><div class="nav-sub">Benchmarking, 5 fuerzas Porter</div></div>
+      <div class="sync-dot"></div>
+    </div>
+    <div class="nav-item" id="nav-b2p6" onclick="setCtx(this,'b2p6','P6','Estrategia de precios por valor')">
+      <span class="nav-paso">P6</span>
+      <div><div class="nav-title">Pricing por valor</div><div class="nav-sub">Disposición a pagar, margen</div></div>
+      <div class="sync-dot"></div>
+    </div>
+  </div>
+  <div class="sb-sec">
+    <div class="sb-lbl">Bloque 3 · Operaciones</div>
+    <div class="nav-item" id="nav-b3p7" onclick="setCtx(this,'b3p7','P7','Localización de planta y puntos de venta')">
+      <span class="nav-paso">P7</span>
+      <div><div class="nav-title">Localización y PDV</div><div class="nav-sub">Corredor Orizaba–Córdoba</div></div>
+      <div class="sync-dot"></div>
+    </div>
+    <div class="nav-item" id="nav-b3p8" onclick="setCtx(this,'b3p8','P8','Plan de Manufactura y Maquila')">
+      <span class="nav-paso">P8</span>
+      <div><div class="nav-title">Plan de Manufactura / Maquila</div><div class="nav-sub">Compras, proveedores, producción</div></div>
+      <div class="sync-dot"></div>
+    </div>
+    <div class="nav-item" id="nav-b3p9" onclick="setCtx(this,'b3p9','P9','Plan de Logística y Distribución Comercial')">
+      <span class="nav-paso">P9</span>
+      <div><div class="nav-title">Plan de Logística</div><div class="nav-sub">Distribución local, canales, KPIs</div></div>
+      <div class="sync-dot"></div>
+    </div>
+  </div>
+  <div class="sb-footer">
+    <div class="prog-row">
+      <span class="prog-lbl">AVANCE GLOBAL</span>
+      <span class="prog-pct" id="pct-lbl">0%</span>
+    </div>
+    <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+    <button class="btn btn-amber" style="width:100%;justify-content:center;margin-bottom:8px" onclick="showView('avance')">
+      ⬇ Mi avance y descarga
+    </button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+  <div id="view-tabs">
+    <button class="vtab active" onclick="showView('chat')">💬 Mentor IA</button>
+    <button class="vtab" onclick="showView('ref')">📚 Ejemplo Resuelto</button>
+    <button class="vtab" onclick="showView('avance')">📋 Mi Avance</button>
+  </div>
+
+  <!-- CHAT -->
+  <div id="chat-panel" class="view-panel active">
+    <div id="chat-ctx">
+      Contexto: <span class="ctx-tag" id="ctx-lbl">P1 · Descripción del producto</span>
+      <span style="color:var(--light)">— Selecciona un paso en el menú lateral</span>
+    </div>
+    <div id="messages">
+      <div class="msg mentor">
+        <div class="msg-avatar">🎓</div>
+        <div class="msg-bubble">
+          <div class="msg-meta">Mentor Socrático · Kafé-Click · UPAV</div>
+          <p>Bienvenido. Soy tu mentor socrático para <strong>Investigación de Mercado y Producto</strong>. Trabajamos el caso <strong>Kafé-Click</strong> de Cafiver.</p>
+          <p>No te daré respuestas directas: te haré las preguntas correctas para que construyas tu propio análisis. Selecciona un paso en el menú y comparte tu razonamiento inicial.</p>
+          <p>Tu avance se <strong>guarda automáticamente en la nube</strong> cada vez que escribes en los campos de "Mi Avance". Usa la pestaña <strong>Mi Avance</strong> para registrar y descargar tu trabajo. ¿Por dónde empezamos?</p>
+        </div>
+      </div>
+    </div>
+    <div id="input-area">
+      <textarea id="user-input" placeholder="Escribe tu respuesta aquí… (Enter envía · Shift+Enter nueva línea)" rows="1"></textarea>
+      <button class="btn btn-green" onclick="sendMsg()">Enviar →</button>
+    </div>
+  </div>
+
+  <!-- REFERENCIA -->
+  <div id="ref-panel" class="view-panel">
+  <div id="ref-content">
+
+    <div class="bp"><span class="bp-num">BLOQUE 1</span><span>Investigación de Mercado · Clases 1–2</span></div>
+    <div class="eyebrow">Ejemplo resuelto</div>
+    <h2 class="ch2">Investigación de Mercado · Kafé-Click</h2>
+
+    <h3 class="ch3">P1 · Descripción técnica</h3>
+    <p class="cp"><strong>Producto:</strong> Stick pack 5g de café aglomerado instantáneo con 5% de extracto de guaraná. Film kraft laminado barrera, consumo on-the-go, rasgable sin utensilios. <strong>Slogan:</strong> "El impulso que necesitas, en el bolsillo que tienes."</p>
+    <div class="cg">
+      <div class="card g"><div class="ci">📦</div><h4>Formato</h4><p>Stick 5g · kraft laminado barrera · rasgable</p></div>
+      <div class="card g"><div class="ci">⚡</div><h4>Diferenciador</h4><p>5% guaraná · energía sostenida sin picos de azúcar</p></div>
+      <div class="card a"><div class="ci">🏭</div><h4>Origen</h4><p>Cafiver · Río Blanco, Ver. · cadena cafetalera regional</p></div>
+      <div class="card b"><div class="ci">🎯</div><h4>Uso</h4><p>On-the-go · turno laboral · preparación &lt;1 min</p></div>
+    </div>
+
+    <h3 class="ch3">P2 · Segmentación y buyer persona</h3>
+    <div class="tw"><table>
+      <thead><tr><th>Segmento</th><th>Perfil</th><th>Score</th><th>Decisión</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Operario industrial</strong></td><td>Turno rotativo · NSE C/D+ · gasto $50-70/día</td><td style="color:var(--green);font-weight:700">18/20</td><td><span class="badge bg">PRIORITARIO</span></td></tr>
+        <tr><td>Universitario</td><td>Horario flexible · menor poder adquisitivo</td><td>15/20</td><td><span class="badge ba">SECUNDARIO</span></td></tr>
+        <tr><td>Profesionista</td><td>NSE B/C+ · prefiere café premium</td><td>12/20</td><td><span class="badge br">FASE 2</span></td></tr>
+      </tbody>
+    </table></div>
+    <p class="cp"><strong>Buyer Persona — Carlos, 28 años:</strong> operario turno rotativo, parque maquilador Orizaba. NSE C/D+. Gasto $50–70/día. Necesita energía en ≤1 min sin salir de su área. Dolor: café de máquina cuesta $20, frío y de baja calidad.</p>
+
+    <h3 class="ch3">P3 · Triangulación de datos</h3>
+    <div class="kr">
+      <div class="kb"><span class="kv">350K</span><div class="kl">Hab. ZM Orizaba (INEGI)</div></div>
+      <div class="kb"><span class="kv">105K</span><div class="kl">Segmento 18–35 años</div></div>
+      <div class="kb"><span class="kv">42K</span><div class="kl">Target operativo</div></div>
+      <div class="kb"><span class="kv">↑68%</span><div class="kl">Cafés funcionales (PROFECO)</div></div>
+    </div>
+    <div class="hl"><strong>Triangulación:</strong> INEGI (demografía) + PROFECO/CANACAFE (tendencia funcional) + observación de campo en parques maquiladores Orizaba–Río Blanco.</div>
+    <div class="audit">
+      <div class="audit-h">Auditoría Bloque 1</div>
+      <div class="audit-i">✅ <span>Triangulación con 3 fuentes independientes</span></div>
+      <div class="audit-i">✅ <span>Segmentación cuantificada con puntaje explícito</span></div>
+      <div class="audit-i">✅ <span>Buyer persona con NSE, gasto real y dolor específico</span></div>
+      <div class="audit-i">⚠️ <span>Tamaño de mercado estimado, no validado con encuesta directa</span></div>
+    </div>
+
+    <hr class="div">
+    <div class="bp"><span class="bp-num">BLOQUE 2</span><span>Identidad de Marca y Análisis Competitivo · Clases 3–4</span></div>
+
+    <h3 class="ch3">P4 · Identidad de marca</h3>
+    <p class="cp"><strong>Paleta:</strong> Negro/gris metalizado (precisión industrial) + verde vibrante (guaraná, energía limpia). <strong>Tagline:</strong> "Calibrado para tu máximo rendimiento."</p>
+    <div class="cg">
+      <div class="card g"><div class="ci">⬛</div><h4>Panel Frontal</h4><p>Logo + slogan + ícono guaraná. Gancho en ≤2 seg.</p></div>
+      <div class="card a"><div class="ci">📋</div><h4>Panel Lateral</h4><p>5g · 5% guaraná · energía 4h. Justificación técnica.</p></div>
+      <div class="card b"><div class="ci">📱</div><h4>Panel Posterior</h4><p>Ingredientes + QR trazabilidad. Transparencia.</p></div>
+    </div>
+
+    <h3 class="ch3">P5 · Benchmarking competitivo</h3>
+    <div class="tw"><table>
+      <thead><tr><th>Competidor</th><th>Precio</th><th>Portabilidad</th><th>Funcional</th><th>NSE</th><th>Ventaja KC</th></tr></thead>
+      <tbody>
+        <tr><td>Café soluble Nescafé</td><td>$4–6</td><td>Media</td><td>No</td><td>C/D</td><td>Guaraná + dosis exacta</td></tr>
+        <tr><td>Energética 250ml</td><td>$18–25</td><td>Alta</td><td>Sí</td><td>C/B</td><td>Precio 55% menor</td></tr>
+        <tr><td>Café especialidad</td><td>$35–55</td><td>Baja</td><td>No</td><td>B/C+</td><td>Precio + portabilidad</td></tr>
+        <tr><td><strong>Kafé-Click</strong></td><td><strong>$8–10</strong></td><td><strong>Máxima</strong></td><td><strong>Sí</strong></td><td><strong>C/D+</strong></td><td><strong>Propuesta única</strong></td></tr>
+      </tbody>
+    </table></div>
+
+    <h3 class="ch3">P6 · Pricing por valor</h3>
+    <p class="cp">Precio fijado por disposición a pagar del segmento, no por costo+margen. El operario paga $20 por café de baja calidad. Kafé-Click ofrece calidad superior + guaraná a $10.</p>
+    <div class="hl"><strong>Ecuación de valor:</strong> KC $10 vs. energética $18 → ahorro $8/dosis = 44% más económico con beneficio funcional equivalente.</div>
+    <div class="audit">
+      <div class="audit-h">Auditoría Bloque 2</div>
+      <div class="audit-i">✅ <span>Pricing por valor con benchmarking incluido</span></div>
+      <div class="audit-i">✅ <span>Branding con justificación estratégica por segmento</span></div>
+      <div class="audit-i">⚠️ <span>Precios de competidores sin verificación de campo reciente</span></div>
+      <div class="audit-i">❌ <span>Bloqueador: Análisis de Porter (5 fuerzas) no desarrollado</span></div>
+    </div>
+
+    <hr class="div">
+    <div class="bp"><span class="bp-num">BLOQUE 3</span><span>Operaciones y Cadena de Suministro · Clases 5–7</span></div>
+    <p class="cp"><strong>Enfoque:</strong> Administración de compras, relaciones con proveedores, logística comercial. Estructura física de producción y estrategia de distribución local.</p>
+
+    <h3 class="ch3">P7 · Localización y puntos de venta</h3>
+    <div class="tw"><table>
+      <thead><tr><th>Municipio</th><th>Población</th><th>Densidad industrial</th><th>Dist.</th><th>Canal</th><th>Fase</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Río Blanco</strong></td><td>40K</td><td>Muy alta · maquiladora</td><td>0 km</td><td>Cooperativas de planta</td><td><span class="badge bg">F1</span></td></tr>
+        <tr><td><strong>Orizaba</strong></td><td>120K</td><td>Alta · zona fabril</td><td>8 km</td><td>Conveniencia · cafeterías ind.</td><td><span class="badge bg">F1</span></td></tr>
+        <tr><td><strong>C.Z. Mendoza</strong></td><td>55K</td><td>Alta · textil/alimentos</td><td>12 km</td><td>Mercados · distribuidores</td><td><span class="badge bg">F1</span></td></tr>
+        <tr><td>Nogales</td><td>28K</td><td>Media</td><td>18 km</td><td>Tiendas de barrio</td><td><span class="badge ba">F2</span></td></tr>
+        <tr><td>Córdoba</td><td>220K</td><td>Media-alta</td><td>42 km</td><td>Cadenas · mayoristas</td><td><span class="badge ba">F2</span></td></tr>
+      </tbody>
+    </table></div>
+    <div class="map-wrap">
+      <svg viewBox="0 0 780 290" xmlns="http://www.w3.org/2000/svg" font-family="JetBrains Mono,monospace">
+        <rect width="780" height="290" fill="#f7f8fa" rx="4"/>
+        <line x1="50" y1="145" x2="720" y2="145" stroke="#c9d0db" stroke-width="6" stroke-linecap="round"/>
+        <line x1="50" y1="145" x2="720" y2="145" stroke="#d97706" stroke-width="1.5" stroke-dasharray="10,6"/>
+        <text x="385" y="163" fill="#d97706" font-size="9" text-anchor="middle" letter-spacing="2">AUTOPISTA 150D</text>
+        <defs>
+          <marker id="ag2" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#16a34a"/></marker>
+          <marker id="aa2" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#d97706"/></marker>
+        </defs>
+        <circle cx="130" cy="145" r="20" fill="#dcfce7" stroke="#bbf7d0" stroke-width="1.5"/>
+        <text x="130" y="149" fill="#166534" font-size="9" font-weight="bold" text-anchor="middle">RB</text>
+        <text x="130" y="174" fill="#16a34a" font-size="9" font-weight="bold" text-anchor="middle">RÍO BLANCO</text>
+        <text x="130" y="186" fill="#8a93a2" font-size="8" text-anchor="middle">PLANTA · 0 km</text>
+        <path d="M154 145 L244 145" stroke="#16a34a" stroke-width="1.5" marker-end="url(#ag2)"/>
+        <circle cx="264" cy="145" r="16" fill="#dbeafe" stroke="#93c5fd" stroke-width="1.5"/>
+        <text x="264" y="149" fill="#1e40af" font-size="8" font-weight="bold" text-anchor="middle">OZ</text>
+        <text x="264" y="173" fill="#2563eb" font-size="9" font-weight="bold" text-anchor="middle">ORIZABA</text>
+        <text x="264" y="185" fill="#8a93a2" font-size="8" text-anchor="middle">8 km · F1</text>
+        <path d="M264 129 L264 96 L374 96" stroke="#16a34a" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#ag2)"/>
+        <circle cx="392" cy="96" r="14" fill="#dbeafe" stroke="#93c5fd" stroke-width="1.5"/>
+        <text x="392" y="100" fill="#1e40af" font-size="8" font-weight="bold" text-anchor="middle">CZ</text>
+        <text x="392" y="123" fill="#2563eb" font-size="9" font-weight="bold" text-anchor="middle">C.Z. MENDOZA</text>
+        <text x="392" y="135" fill="#8a93a2" font-size="8" text-anchor="middle">12 km · F1</text>
+        <path d="M264 161 L264 212 L374 212" stroke="#d97706" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#aa2)"/>
+        <circle cx="392" cy="212" r="13" fill="#fef3c7" stroke="#fcd34d" stroke-width="1.5"/>
+        <text x="392" y="216" fill="#92400e" font-size="8" font-weight="bold" text-anchor="middle">NG</text>
+        <text x="392" y="238" fill="#d97706" font-size="9" font-weight="bold" text-anchor="middle">NOGALES</text>
+        <text x="392" y="250" fill="#8a93a2" font-size="8" text-anchor="middle">18 km · F2</text>
+        <path d="M284 145 L628 145" stroke="#d97706" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#aa2)"/>
+        <circle cx="646" cy="145" r="14" fill="#fef3c7" stroke="#fcd34d" stroke-width="1.5"/>
+        <text x="646" y="149" fill="#92400e" font-size="8" font-weight="bold" text-anchor="middle">CB</text>
+        <text x="646" y="173" fill="#d97706" font-size="9" font-weight="bold" text-anchor="middle">CÓRDOBA</text>
+        <text x="646" y="185" fill="#8a93a2" font-size="8" text-anchor="middle">42 km · F2</text>
+        <rect x="26" y="236" width="196" height="44" fill="white" stroke="#e4e7ec" stroke-width="1" rx="4"/>
+        <circle cx="42" cy="252" r="5" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+        <text x="53" y="256" fill="#4a5568" font-size="9">Fase 1 · Lanzamiento</text>
+        <circle cx="42" cy="270" r="5" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+        <text x="53" y="274" fill="#4a5568" font-size="9">Fase 2 · Expansión</text>
+      </svg>
+    </div>
+
+    <h3 class="ch3">P8 · Plan de Manufactura / Maquila</h3>
+    <p class="cp">Define la <strong>estructura física de producción</strong>: producción propia, maquila a tercero, o modelo mixto. Para Kafé-Click en Fase 1, la decisión impacta CAPEX, calidad de fórmula y flexibilidad operativa.</p>
+    <div class="cg">
+      <div class="card g"><div class="ci">🏭</div><h4>Producción propia</h4><p>Cafiver controla todo. Mayor CAPEX. Control total de calidad. Viable en volumen ≥50K sticks/semana.</p></div>
+      <div class="card a"><div class="ci">🤝</div><h4>Maquila regional</h4><p>Envasadora en Orizaba/Córdoba. Bajo CAPEX inicial. Riesgo: menor control de fórmula y tiempos.</p></div>
+      <div class="card b"><div class="ci">🔄</div><h4>Modelo mixto ★</h4><p>Cafiver produce y mezcla. Maquiladora solo envasa stick. Equilibrio entre control y flexibilidad.</p></div>
+    </div>
+    <div class="hl-amber"><strong>Decisión recomendada Fase 1:</strong> Modelo mixto. Cafiver controla la mezcla café+guaraná; maquiladora regional realiza el envasado en stick pack. Reduce CAPEX, protege el diferenciador de fórmula, permite escalar.</div>
+
+    <h3 class="ch3">P8 · Administración de compras y proveedores</h3>
+    <div class="tw"><table>
+      <thead><tr><th>Insumo</th><th>Proveedor</th><th>Origen</th><th>Criterio</th><th>Riesgo</th><th>Mitigación</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Café aglomerado</strong></td><td>Tostador regional</td><td>Coatepec/Huatusco</td><td>SAGARPA + precio/kg</td><td><span class="badge ba">MEDIO</span></td><td>3 alternativas cotizadas</td></tr>
+        <tr><td><strong>Extracto guaraná</strong></td><td>Importador CDMX</td><td>Brasil (Parástate)</td><td>Pureza ≥95% + COFEPRIS</td><td><span class="badge br">ALTO</span></td><td>Stock 30d + contrato MXN fijo</td></tr>
+        <tr><td><strong>Film kraft laminado</strong></td><td>Empaque flexible</td><td>Monterrey/CDMX</td><td>Barrera O₂ + impresión</td><td><span class="badge ba">MEDIO</span></td><td>Lead 14d · stock 2 semanas</td></tr>
+        <tr><td><strong>Maquiladora envase</strong></td><td>Envasadora stick</td><td>Orizaba/Córdoba</td><td>Cap. ≥10K sticks/sem</td><td><span class="badge ba">MEDIO</span></td><td>Contrato con penalidad</td></tr>
+        <tr><td><strong>Caja display</strong></td><td>Imprenta regional</td><td>Orizaba/Córdoba</td><td>Costo + tiempo respuesta</td><td><span class="badge bg">BAJO</span></td><td>Pedido quincenal</td></tr>
+      </tbody>
+    </table></div>
+    <div class="kr">
+      <div class="kb"><span class="kv">5</span><div class="kl">Insumos críticos</div></div>
+      <div class="kb"><span class="kv">30d</span><div class="kl">Stock seg. guaraná</div></div>
+      <div class="kb"><span class="kv">7d</span><div class="kl">Lead time local</div></div>
+      <div class="kb"><span class="kv">21d</span><div class="kl">Lead time importado</div></div>
+      <div class="kb"><span class="kv">4C</span><div class="kl">Costo·Calidad·Conf.·Cump.</div></div>
+    </div>
+
+    <h3 class="ch3">P9 · Plan de Logística y Distribución Comercial</h3>
+    <div class="flow">
+      <div class="fn">🌱 Proveedores<small>Café·Guaraná·Kraft</small></div><div class="fa">→</div>
+      <div class="fn">🏭 Cafiver<small>Mezcla/Fórmula</small></div><div class="fa">→</div>
+      <div class="fn">🤝 Maquiladora<small>Envasado stick</small></div><div class="fa">→</div>
+      <div class="fn">📦 Almacén PT<small>Río Blanco</small></div><div class="fa">→</div>
+      <div class="fn">🚐 Reparto D2R<small>Ruta diaria</small></div><div class="fa">→</div>
+      <div class="fn">🏪 PDV<small>27 puntos F1</small></div><div class="fa">→</div>
+      <div class="fn">👷 Consumidor<small>Operario NSE C/D+</small></div>
+    </div>
+    <div class="tw"><table>
+      <thead><tr><th>Canal</th><th>Tipo de PDV</th><th>Frecuencia</th><th>Unidades/visita</th><th>Negociación</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Cooperativas planta</strong></td><td>Tienda interna maquiladora</td><td>3×/semana</td><td>300 u.</td><td>Acuerdo directo (1 semana)</td></tr>
+        <tr><td><strong>Conveniencia</strong></td><td>OXXO · minisupers</td><td>2×/semana</td><td>150 u./tienda</td><td>Central de compras (60–90 días)</td></tr>
+        <tr><td><strong>Cafeterías industriales</strong></td><td>Comedor de turno</td><td>2×/semana</td><td>200 u./cafetería</td><td>Gerente de planta (2 semanas)</td></tr>
+        <tr><td><strong>Tiendas de barrio</strong></td><td>Misceláneas NSE D+</td><td>1×/semana</td><td>60 u./tienda</td><td>Venta directa (inmediato)</td></tr>
+      </tbody>
+    </table></div>
+    <div class="kr">
+      <div class="kb"><span class="kv">18K</span><div class="kl">Sticks/semana F1</div></div>
+      <div class="kb"><span class="kv">48h</span><div class="kl">Ciclo prod→PDV</div></div>
+      <div class="kb"><span class="kv">95%</span><div class="kl">OTIF objetivo</div></div>
+      <div class="kb"><span class="kv">27</span><div class="kl">PDV activos F1</div></div>
+      <div class="kb"><span class="kv">$1.20</span><div class="kl">Costo logístico/stick</div></div>
+      <div class="kb"><span class="kv">$720K</span><div class="kl">Ingreso bruto/mes</div></div>
+    </div>
+    <div class="audit">
+      <div class="audit-h">Auditoría Bloque 3</div>
+      <div class="audit-i">✅ <span>Localización con método de factores ponderados (5 municipios)</span></div>
+      <div class="audit-i">✅ <span>Plan manufactura con 3 modelos comparados — decisión mixto justificada</span></div>
+      <div class="audit-i">✅ <span>Mapa de proveedores completo con riesgos y mitigación</span></div>
+      <div class="audit-i">✅ <span>Modelo D2R con rutas, 27 PDV, frecuencias y KPIs</span></div>
+      <div class="audit-i">⚠️ <span>Costo logístico $1.20/stick pendiente de cotización real</span></div>
+      <div class="audit-i">❌ <span>Bloqueador: precio unitario definitivo pendiente de integrar con costos</span></div>
+    </div>
+
+  </div>
+  </div><!-- /ref-panel -->
+
+  <!-- MI AVANCE -->
+  <div id="avance-panel" class="view-panel">
+  <div id="avance-content">
+    <div class="eyebrow">Mi registro de trabajo</div>
+    <h2 class="ch2">Kafé-Click · Avance por bloque</h2>
+    <p class="cp" style="margin-bottom:20px">Escribe tu análisis en cada campo. Los cambios se guardan automáticamente en la nube. El punto verde en el sidebar confirma que cada sección fue guardada.</p>
+
+    <!-- B1 -->
+    <div class="av-block" id="blk-b1">
+      <div class="av-header">
+        <div class="av-title">Bloque 1 · Investigación de Mercado</div>
+        <div class="av-status-row"><span class="av-st" id="st-b1">Sin guardar</span><div class="av-sync" id="sync-b1"></div></div>
+      </div>
+      <div class="av-body">
+        <div class="av-field"><label>P1 · Descripción técnica del producto</label><textarea id="b1p1" placeholder="Formato, ingredientes, propuesta de valor, diferenciador, slogan…" oninput="autoSave('b1')"></textarea></div>
+        <div class="av-field"><label>P2 · Segmentación y Buyer Persona</label><textarea id="b1p2" placeholder="Segmento prioritario, justificación, perfil buyer persona (NSE, hábitos, dolores, ganancias)…" oninput="autoSave('b1')"></textarea></div>
+        <div class="av-field"><label>P3 · Investigación de mercado y triangulación</label><textarea id="b1p3" placeholder="Fuentes consultadas, datos clave, triangulación, tamaño de mercado estimado…" oninput="autoSave('b1')"></textarea></div>
+        <div class="av-field"><label>✏️ Observaciones del mentor incorporadas</label><textarea id="b1obs" class="obs-ta" placeholder="¿Qué correcciones realizaste tras la retroalimentación del mentor? Sé específico…" oninput="autoSave('b1')"></textarea></div>
+      </div>
+      <div class="av-actions"><span class="save-ok" id="ok-b1">✓ Guardado en la nube</span></div>
+    </div>
+
+    <!-- B2 -->
+    <div class="av-block" id="blk-b2">
+      <div class="av-header">
+        <div class="av-title">Bloque 2 · Identidad de Marca y Precio</div>
+        <div class="av-status-row"><span class="av-st" id="st-b2">Sin guardar</span><div class="av-sync" id="sync-b2"></div></div>
+      </div>
+      <div class="av-body">
+        <div class="av-field"><label>P4 · Identidad de marca y empaque</label><textarea id="b2p4" placeholder="Nombre, paleta, tipografía, tagline, arquitectura de empaque (3 paneles)…" oninput="autoSave('b2')"></textarea></div>
+        <div class="av-field"><label>P5 · Análisis competitivo y benchmarking</label><textarea id="b2p5" placeholder="Competidores, precios verificados, ventajas/desventajas, análisis de Porter…" oninput="autoSave('b2')"></textarea></div>
+        <div class="av-field"><label>P6 · Estrategia de precios por valor</label><textarea id="b2p6" placeholder="Precio propuesto, método de fijación, disposición a pagar del segmento, margen estimado…" oninput="autoSave('b2')"></textarea></div>
+        <div class="av-field"><label>✏️ Observaciones del mentor incorporadas</label><textarea id="b2obs" class="obs-ta" placeholder="Correcciones realizadas tras la retroalimentación del mentor…" oninput="autoSave('b2')"></textarea></div>
+      </div>
+      <div class="av-actions"><span class="save-ok" id="ok-b2">✓ Guardado en la nube</span></div>
+    </div>
+
+    <!-- B3 -->
+    <div class="av-block" id="blk-b3">
+      <div class="av-header">
+        <div class="av-title">Bloque 3 · Operaciones y Cadena de Suministro</div>
+        <div class="av-status-row"><span class="av-st" id="st-b3">Sin guardar</span><div class="av-sync" id="sync-b3"></div></div>
+      </div>
+      <div class="av-body">
+        <div class="av-field"><label>P7 · Localización y puntos de venta</label><textarea id="b3p7" placeholder="Municipios seleccionados, criterios, tipos de PDV, justificación estratégica…" oninput="autoSave('b3')"></textarea></div>
+        <div class="av-field"><label>P8 · Plan de Manufactura / Maquila</label><textarea id="b3p8" placeholder="¿Producción propia, maquila o modelo mixto? Justificación. Mapa de proveedores: insumos, riesgos, mitigación. Política de compras y stock de seguridad…" oninput="autoSave('b3')"></textarea></div>
+        <div class="av-field"><label>P9 · Plan de Logística y Distribución Comercial</label><textarea id="b3p9" placeholder="Modelo D2R u otro. Rutas y frecuencias. Canales y negociación. KPIs logísticos. Fases de expansión…" oninput="autoSave('b3')"></textarea></div>
+        <div class="av-field"><label>✏️ Observaciones del mentor incorporadas</label><textarea id="b3obs" class="obs-ta" placeholder="Correcciones realizadas tras la retroalimentación del mentor…" oninput="autoSave('b3')"></textarea></div>
+      </div>
+      <div class="av-actions"><span class="save-ok" id="ok-b3">✓ Guardado en la nube</span></div>
+    </div>
+
+    <!-- DESCARGA -->
+    <div class="dl-box">
+      <div class="eyebrow">Exportar</div>
+      <h3 class="ch3" style="margin-top:4px;color:var(--green-dim)">Descargar mi documento de trabajo</h3>
+      <p class="cp">El archivo incluye tu análisis completo, las observaciones del mentor y la bitácora de la sesión de chat.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button class="btn btn-green" onclick="dlHTML()">⬇ Descargar HTML</button>
+        <button class="btn btn-outline" onclick="dlMD()">⬇ Descargar Markdown</button>
+      </div>
+    </div>
+  </div>
+  </div><!-- /avance-panel -->
+
+</div><!-- /main -->
+</div><!-- /layout -->
+
+<div id="toast"><span id="toast-msg"></span></div>
+
+<!-- ════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════ -->
+<script>
+// ── Estado global ──
+let apiKey   = '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';
+let userId   = '';   // matrícula sanitizada
+let userName = '';
+let ctx      = { id:'b1p1', tag:'P1', tema:'Descripción técnica del producto' };
+let chatHistory = [];
+let saveTimers  = {};
+let fbReady     = false;
+
+// Esperamos Firebase
+window.addEventListener('fbReady', () => { fbReady = true; updateFbStatus('ok'); });
+setTimeout(() => { if (!fbReady) updateFbStatus('err'); }, 8000);
+
+function updateFbStatus(state) {
+  const el = document.getElementById('fb-status');
+  if (state === 'ok')  { el.className='ok';  el.textContent='● Firebase OK'; }
+  if (state === 'err') { el.className='err'; el.textContent='✕ Sin conexión'; }
+  if (state === 'wait'){ el.className='wait'; el.textContent='⏳ Sincronizando…'; }
+}
+
+// ── LOGIN ──
+async function loginUser() {
+  const name = document.getElementById('inp-name').value.trim();
+  const mat  = document.getElementById('inp-mat').value.trim();
+
+  if (!name || !mat) { toast('⚠ Ingresa nombre y matrícula'); return; }
+  if (!fbReady) { toast('⚠ Firebase no conectado aún, espera un momento'); return; }
+
+  userName = name;
+  userId   = mat.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+
+  // Cargar datos previos
+  await loadUserData();
+
+  // UI
+  document.getElementById('modal-overlay').classList.add('hidden');
+  document.getElementById('user-badge').classList.add('show');
+  document.getElementById('ub-name').textContent = name + ' · ' + mat;
+
+  // Listener tiempo real
+  startRealtimeSync();
+
+  toast(`✓ Bienvenido, ${name.split(' ')[0]}`);
+}
+
+function logoutUser() {
+  if (!confirm('¿Salir? Tu avance está guardado en la nube.')) return;
+  userId = ''; userName = '';
+  document.getElementById('user-badge').classList.remove('show');
+  document.getElementById('modal-overlay').classList.remove('hidden');
+  ['b1p1','b1p2','b1p3','b1obs','b2p4','b2p5','b2p6','b2obs','b3p7','b3p8','b3p9','b3obs']
+    .forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  chatHistory = [];
+  document.getElementById('messages').innerHTML = '';
+  updateProg();
+}
+
+// ── CARGA DESDE FIREBASE ──
+async function loadUserData() {
+  try {
+    const db = window._db;
+    const snap = await window._getDoc(window._doc(db, 'mentor_kafeclick', userId));
+    if (!snap.exists()) return;
+    const data = snap.data();
+
+    const fields = ['b1p1','b1p2','b1p3','b1obs','b2p4','b2p5','b2p6','b2obs','b3p7','b3p8','b3p9','b3obs'];
+    fields.forEach(id => {
+      const el = document.getElementById(id);
+      if (el && data[id]) el.value = data[id];
+    });
+
+    if (data.chatHistory && Array.isArray(data.chatHistory)) {
+      chatHistory = data.chatHistory;
+      // Re-render chat
+      data.chatHistory.forEach(m => {
+        if (m.role === 'user') addUserBubble(m.content.replace(/^\[P\d.*?\]\n\n/,''));
+        else addMentorBubble(m.content);
+      });
+    }
+
+    // Marcar pasos guardados
+    ['b1','b2','b3'].forEach(b => markSaved(b));
+    updateProg();
+    toast('✓ Avance anterior restaurado');
+  } catch(e) {
+    console.error('loadUserData:', e);
+  }
+}
+
+// ── SYNC TIEMPO REAL ──
+function startRealtimeSync() {
+  if (!userId) return;
+  window._onSnapshot(
+    window._doc(window._db, 'mentor_kafeclick', userId),
+    (snap) => {
+      if (!snap.exists()) return;
+      updateFbStatus('ok');
+    },
+    (err) => { updateFbStatus('err'); }
+  );
+}
+
+// ── AUTO-SAVE ──
+function autoSave(blk) {
+  clearTimeout(saveTimers[blk]);
+  setSyncState(blk, 'syncing');
+  saveTimers[blk] = setTimeout(() => saveBlk(blk), 1200);
+}
+
+async function saveBlk(blk) {
+  if (!userId || !fbReady) return;
+  setSyncState(blk, 'syncing');
+
+  const fields = {
+    b1: ['b1p1','b1p2','b1p3','b1obs'],
+    b2: ['b2p4','b2p5','b2p6','b2obs'],
+    b3: ['b3p7','b3p8','b3p9','b3obs']
+  };
+
+  const payload = { updatedAt: window._serverTimestamp(), userName };
+  fields[blk].forEach(id => { payload[id] = gv(id); });
+
+  try {
+    await window._setDoc(
+      window._doc(window._db, 'mentor_kafeclick', userId),
+      payload,
+      { merge: true }
+    );
+    setSyncState(blk, 'synced');
+    markSaved(blk);
+    const ok = document.getElementById('ok-' + blk);
+    ok.classList.add('show');
+    setTimeout(() => ok.classList.remove('show'), 2500);
+    updateProg();
+  } catch(e) {
+    setSyncState(blk, 'err');
+    toast('⚠ Error al guardar en Firebase');
+  }
+}
+
+async function saveChatToFirebase() {
+  if (!userId || !fbReady) return;
+  try {
+    await window._setDoc(
+      window._doc(window._db, 'mentor_kafeclick', userId),
+      { chatHistory: chatHistory.slice(-60), updatedAt: window._serverTimestamp(), userName },
+      { merge: true }
+    );
+  } catch(e) { /* silencioso */ }
+}
+
+function setSyncState(blk, state) {
+  const dot = document.getElementById('sync-' + blk);
+  const st  = document.getElementById('st-' + blk);
+  if (!dot || !st) return;
+  dot.className = 'av-sync';
+  if (state === 'syncing') { dot.classList.add('syncing'); st.textContent = 'Guardando…'; }
+  if (state === 'synced')  { dot.classList.add('synced');  st.textContent = '✓ Sincronizado · ' + new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}); }
+  if (state === 'err')     { st.textContent = '✕ Error al guardar'; }
+}
+
+function markSaved(blk) {
+  const map = { b1:'nav-b1p1', b2:'nav-b2p4', b3:'nav-b3p7' };
+  ['nav-b1p1','nav-b1p2','nav-b1p3'].forEach(id => { if(blk==='b1') document.getElementById(id)?.classList.add('saved'); });
+  ['nav-b2p4','nav-b2p5','nav-b2p6'].forEach(id => { if(blk==='b2') document.getElementById(id)?.classList.add('saved'); });
+  ['nav-b3p7','nav-b3p8','nav-b3p9'].forEach(id => { if(blk==='b3') document.getElementById(id)?.classList.add('saved'); });
+}
+
+// ── NAV / VIEWS ──
+function setCtx(el, id, tag, tema) {
+  ctx = { id, tag, tema };
+  document.getElementById('ctx-lbl').textContent = tag + ' · ' + tema;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+  showView('chat');
+  addMentorBubble(`Cambiamos a <strong>${tag}: ${tema}</strong>. ¿Qué has analizado hasta ahora sobre este tema? Comparte tu razonamiento inicial, sin importar si está incompleto.`);
+}
+
+function showView(v) {
+  document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.vtab').forEach(t => t.classList.remove('active'));
+  document.getElementById(v + '-panel').classList.add('active');
+  const i = {chat:0,ref:1,avance:2}[v];
+  document.querySelectorAll('.vtab')[i].classList.add('active');
+}
+
+// ── PROGRESS ──
+function updateProg() {
+  const filled = ['b1p1','b2p4','b3p7']
+    .filter(id => (gv(id)||'').trim().length > 10).length;
+  const turns = Math.min(chatHistory.filter(m=>m.role==='user').length, 9);
+  const pct = Math.round((filled/3)*60 + (turns/9)*40);
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('pct-lbl').textContent = pct + '%';
+}
+
+// ── CHAT ──
+const SYSTEM = `Eres el Mentor Socrático del curso "Investigación de Mercado y Producto" de Ingeniería Industrial en UPAV sede Orizaba. Caso: Kafé-Click — stick pack 5g de café aglomerado con 5% guaraná, producido por Cafiver en Río Blanco, Veracruz. Target: operarios industriales NSE C/C+/D+ en la ZM Orizaba.
+
+Bloque 3 cubre: administración de compras, relaciones con proveedores, logística comercial, estructura física de producción (manufactura/maquila) y estrategia de distribución local. Pasos 8 y 9: Plan de Manufactura/Maquila y Plan de Logística.
+
+TU ROL:
+- Nunca das la respuesta directa. Haces preguntas que llevan al alumno a construir su propio análisis.
+- Método socrático: pregunta → valida → señala vacíos → pide datos concretos.
+- Tono: directo, conciso, exigente. Sin cumplidos vacíos.
+- Longitud: máximo 4 párrafos cortos. Termina SIEMPRE con una pregunta.
+- Terminología: NSE, segmentación, pricing por valor, manufactura, maquila, modelo mixto, D2R, OTIF, lead time, stock de seguridad, PDV, logística comercial.`;
+
+document.getElementById('user-input').addEventListener('keydown', function(e) {
+  if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+  this.style.height='auto';
+  this.style.height=Math.min(this.scrollHeight,120)+'px';
+});
+
+async function sendMsg() {
+  const el  = document.getElementById('user-input');
+  const txt = el.value.trim();
+  if (!txt) return;
+
+  if (!userId) { toast('⚠ Identifícate primero'); return; }
+
+  addUserBubble(txt);
+  el.value=''; el.style.height='auto';
+
+  const msgCtx = `[${ctx.tag} — ${ctx.tema}]\n\n${txt}`;
+  chatHistory.push({ role:'user', content: msgCtx });
+  showTyping();
+
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body: JSON.stringify({
+        model:'claude-haiku-4-5-20251001',
+        max_tokens:1000,
+        system: SYSTEM,
+        messages: chatHistory
+      })
+    });
+    const d = await r.json();
+    removeTyping();
+    if (d.error) { addMentorBubble('⚠ Error API: ' + d.error.message); chatHistory.pop(); return; }
+    const reply = d.content[0].text;
+    addMentorBubble(reply);
+    chatHistory.push({ role:'assistant', content: reply });
+    await saveChatToFirebase();
+    updateProg();
+  } catch(e) {
+    removeTyping();
+    addMentorBubble('⚠ No se pudo conectar con la API. Verifica tu key e intenta de nuevo.');
+    chatHistory.pop();
+  }
+}
+
+function addUserBubble(txt) {
+  const m = document.getElementById('messages');
+  const d = document.createElement('div');
+  d.className='msg user';
+  d.innerHTML=`<div class="msg-avatar">👤</div><div class="msg-bubble"><div class="msg-meta">Tú</div>${esc(txt).replace(/\n/g,'<br>')}</div>`;
+  m.appendChild(d); m.scrollTop=m.scrollHeight;
+}
+function addMentorBubble(html) {
+  const m = document.getElementById('messages');
+  const d = document.createElement('div');
+  d.className='msg mentor';
+  d.innerHTML=`<div class="msg-avatar">🎓</div><div class="msg-bubble"><div class="msg-meta">Mentor Socrático</div><p>${html.replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>')}</p></div>`;
+  m.appendChild(d); m.scrollTop=m.scrollHeight;
+}
+function showTyping() {
+  const m=document.getElementById('messages');
+  const d=document.createElement('div');
+  d.className='msg mentor';d.id='typing';
+  d.innerHTML=`<div class="msg-avatar">🎓</div><div class="msg-bubble"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>`;
+  m.appendChild(d);m.scrollTop=m.scrollHeight;
+}
+function removeTyping(){ const t=document.getElementById('typing');if(t)t.remove(); }
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function gv(id){ return document.getElementById(id)?.value||''; }
+
+// ── DESCARGA ──
+function dlHTML() {
+  const fecha = new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'});
+  const log = chatHistory.map(m =>
+    `<div class="lm ${m.role}"><strong>${m.role==='user'?'Alumno':'Mentor'}:</strong><p>${esc(m.content.replace(/^\[P\d.*?\]\n\n/,'')).replace(/\n/g,'<br>')}</p></div>`
+  ).join('');
+  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Avance Kafé-Click · ${fecha}</title>
+<style>body{font-family:'Segoe UI',sans-serif;max-width:800px;margin:0 auto;padding:36px 26px;color:#1a202c;line-height:1.7}
+h1{font-size:21px;border-bottom:3px solid #16a34a;padding-bottom:10px;margin-bottom:4px}
+.meta{font-size:11px;color:#8a93a2;margin-bottom:28px}.blk{border:1px solid #e4e7ec;border-radius:8px;padding:20px;margin:14px 0}
+.bt{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#1a202c;margin-bottom:12px;border-bottom:1px solid #e4e7ec;padding-bottom:8px}
+.campo label{display:block;font-size:10px;font-weight:700;color:#8a93a2;text-transform:uppercase;letter-spacing:.06em;margin:12px 0 3px}
+.cv{font-size:13px;color:#4a5568;white-space:pre-wrap;background:#f7f8fa;border-radius:4px;padding:9px 12px;min-height:32px}
+.ov{background:#dcfce7;border-left:3px solid #16a34a}
+.cs{margin-top:32px;border-top:1px solid #e4e7ec;padding-top:20px}
+.lm{margin-bottom:10px;font-size:12px}.lm strong{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#8a93a2;display:block;margin-bottom:2px}
+.lm.user p{background:#f7f8fa;padding:8px 10px;border-radius:4px;margin:0}
+.lm.assistant p{background:#dcfce7;padding:8px 10px;border-radius:4px;margin:0}
+@media print{body{padding:18px}}</style></head><body>
+<h1>Kafé-Click · Avance del Proyecto</h1>
+<p class="meta">${userName} · Investigación de Mercado y Producto · UPAV Orizaba · ${fecha}</p>
+<div class="blk"><div class="bt">Bloque 1 · Investigación de Mercado</div>
+<div class="campo"><label>P1 · Descripción del producto</label><div class="cv">${gv('b1p1')||'—'}</div></div>
+<div class="campo"><label>P2 · Segmentación y buyer persona</label><div class="cv">${gv('b1p2')||'—'}</div></div>
+<div class="campo"><label>P3 · Investigación y triangulación</label><div class="cv">${gv('b1p3')||'—'}</div></div>
+<div class="campo"><label>Observaciones del mentor incorporadas</label><div class="cv ov">${gv('b1obs')||'—'}</div></div></div>
+<div class="blk"><div class="bt">Bloque 2 · Identidad de Marca y Precio</div>
+<div class="campo"><label>P4 · Identidad de marca</label><div class="cv">${gv('b2p4')||'—'}</div></div>
+<div class="campo"><label>P5 · Análisis competitivo</label><div class="cv">${gv('b2p5')||'—'}</div></div>
+<div class="campo"><label>P6 · Pricing por valor</label><div class="cv">${gv('b2p6')||'—'}</div></div>
+<div class="campo"><label>Observaciones del mentor incorporadas</label><div class="cv ov">${gv('b2obs')||'—'}</div></div></div>
+<div class="blk"><div class="bt">Bloque 3 · Operaciones y Cadena de Suministro</div>
+<div class="campo"><label>P7 · Localización y PDV</label><div class="cv">${gv('b3p7')||'—'}</div></div>
+<div class="campo"><label>P8 · Plan de Manufactura / Maquila</label><div class="cv">${gv('b3p8')||'—'}</div></div>
+<div class="campo"><label>P9 · Plan de Logística y Distribución</label><div class="cv">${gv('b3p9')||'—'}</div></div>
+<div class="campo"><label>Observaciones del mentor incorporadas</label><div class="cv ov">${gv('b3obs')||'—'}</div></div></div>
+${log?`<div class="cs"><h2 style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8a93a2;margin-bottom:14px">Bitácora de sesión</h2>${log}</div>`:''}
+</body></html>`;
+  dl(`avance_kafeclick_${userName.split(' ')[0]}_${fecha.replace(/ /g,'_')}.html`, html, 'text/html');
+  toast('✓ HTML descargado');
+}
+
+function dlMD() {
+  const fecha = new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'});
+  const md=`# Kafé-Click · Avance del Proyecto
+**Alumno:** ${userName}
+**Asignatura:** Investigación de Mercado y Producto · UPAV Orizaba
+**Fecha:** ${fecha}
+
+---
+
+## BLOQUE 1 · INVESTIGACIÓN DE MERCADO
+### P1 · Descripción del producto
+${gv('b1p1')||'_Sin completar_'}
+### P2 · Segmentación y buyer persona
+${gv('b1p2')||'_Sin completar_'}
+### P3 · Investigación y triangulación
+${gv('b1p3')||'_Sin completar_'}
+### Observaciones del mentor incorporadas
+${gv('b1obs')||'_Sin completar_'}
+
+---
+
+## BLOQUE 2 · IDENTIDAD DE MARCA Y PRECIO
+### P4 · Identidad de marca
+${gv('b2p4')||'_Sin completar_'}
+### P5 · Análisis competitivo
+${gv('b2p5')||'_Sin completar_'}
+### P6 · Pricing por valor
+${gv('b2p6')||'_Sin completar_'}
+### Observaciones del mentor incorporadas
+${gv('b2obs')||'_Sin completar_'}
+
+---
+
+## BLOQUE 3 · OPERACIONES Y CADENA DE SUMINISTRO
+### P7 · Localización y PDV
+${gv('b3p7')||'_Sin completar_'}
+### P8 · Plan de Manufactura / Maquila
+${gv('b3p8')||'_Sin completar_'}
+### P9 · Plan de Logística y Distribución
+${gv('b3p9')||'_Sin completar_'}
+### Observaciones del mentor incorporadas
+${gv('b3obs')||'_Sin completar_'}
+
+---
+_Exportado desde Mentor Socrático Kafé-Click · UPAV Orizaba_`;
+  dl(`avance_kafeclick_${userName.split(' ')[0]}_${fecha.replace(/ /g,'_')}.md`, md, 'text/markdown');
+  toast('✓ Markdown descargado');
+}
+
+function dl(name, content, type) {
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([content],{type}));
+  a.download=name;a.click();URL.revokeObjectURL(a.href);
+}
+
+function toast(msg) {
+  const t=document.getElementById('toast');
+  document.getElementById('toast-msg').textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+</script>
+</body>
+</html>
